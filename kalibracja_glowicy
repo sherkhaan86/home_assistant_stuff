@@ -1,0 +1,45 @@
+alias: Kalibrowanie głowica łóżko
+description: ''
+trigger:
+  - platform: time_pattern
+    minutes: /30
+action:
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: >-
+              {{
+              states.climate.grzejnik_pawel_lozko.attributes.current_temperature
+              | float - states('sensor.ble_temperature_pawel_temp') | float >
+              1.0 }}
+        sequence:
+          - service: mqtt.publish
+            data:
+              topic: >-
+                zigbee2mqtt/grzejnik_pawel_lozko/set/local_temperature_calibration
+              payload: >-
+                {{
+                states.climate.grzejnik_pawel_lozko.attributes.local_temperature_calibration
+                | float - 1.0 }}
+      - conditions:
+          - condition: template
+            value_template: >-
+              {{
+              states.climate.grzejnik_pawel_lozko.attributes.current_temperature
+              | float - states('sensor.ble_temperature_pawel_temp') | float <
+              0.0 }}
+        sequence:
+          - service: mqtt.publish
+            data:
+              topic: >-
+                zigbee2mqtt/grzejnik_pawel_lozko/set/local_temperature_calibration
+              payload: >-
+                {{
+                states.climate.grzejnik_pawel_lozko.attributes.local_temperature_calibration
+                | float + 1.0 }}
+    default:
+      - service: system_log.write
+        data:
+          message: Kalibracja OK
+          level: info
+mode: single
